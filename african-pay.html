@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZAWADI PAY — Pan-African Payments</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #F5A623;
+    --gold-light: #FFD07A;
+    --red: #E83A2F;
+    --green: #1A7A4A;
+    --green-light: #2ECC71;
+    --dark: #0A0A0F;
+    --dark2: #111118;
+    --dark3: #1A1A24;
+    --dark4: #22222F;
+    --border: rgba(245,166,35,0.15);
+    --text: #F0EDE8;
+    --text-dim: rgba(240,237,232,0.5);
+    --text-dimmer: rgba(240,237,232,0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NOISE TEXTURE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* LAYOUT */
+  .app { display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 260px;
+    background: var(--dark2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+
+  .logo-area {
+    padding: 28px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    color: var(--gold);
+  }
+
+  .logo span {
+    color: var(--text);
+    font-weight: 400;
+  }
+
+  .logo-tag {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 3px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .nav {
+    padding: 20px 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .nav-section-label {
+    font-size: 10px;
+    color: var(--text-dimmer);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 12px 12px 6px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 14px;
+    color: var(--text-dim);
+    border: 1px solid transparent;
+  }
+
+  .nav-item:hover { background: var(--dark3); color: var(--text); }
+
+  .nav-item.active {
+    background: rgba(245,166,35,0.1);
+    color: var(--gold);
+    border-color: rgba(245,166,35,0.2);
+  }
+
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .user-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--dark3);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .user-card:hover { background: var(--dark4); }
+
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), var(--red));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--dark);
+    flex-shrink: 0;
+  }
+
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 500; }
+  .user-id { font-size: 11px; color: var(--text-dim); font-family: 'DM Mono', monospace; }
+
+  /* MAIN */
+  .main {
+    margin-left: 260px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    height: 64px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    gap: 16px;
+    background: var(--dark2);
+    position: sticky; top: 0; z-index: 50;
+  }
+
+  .topbar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    flex: 1;
+  }
+
+  .topbar-actions { display: flex; align-items: center; gap: 12px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .btn-primary {
+    background: var(--gold);
+    color: var(--dark);
+  }
+  .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--dark3); color: var(--text); }
+
+  .network-badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: rgba(26,122,74,0.15);
+    border: 1px solid rgba(26,122,74,0.3);
+    font-size: 12px;
+    color: var(--green-light);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-light); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* PAGE CONTENT */
+  .page { display: none; padding: 32px; }
+  .page.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* DASHBOARD */
+  .balance-hero {
+    background: linear-gradient(135deg, var(--dark3) 0%, #1A1A2E 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .balance-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(245,166,35,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .balance-hero::after {
+    content: 'ZAWADI';
+    position: absolute;
+    bottom: -20px; right: 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 80px;
+    font-weight: 800;
+    color: rgba(245,166,35,0.04);
+    letter-spacing: -4px;
+  }
+
+  .balance-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 8px;
+  }
+
+  .balance-amount {
+    font-family: 'Syne', sans-serif;
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .balance-amount span { color: var(--gold); }
+
+  .balance-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 24px; }
+
+  .balance-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .action-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .action-btn.send { background: var(--gold); color: var(--dark); }
+  .action-btn.send:hover { background: var(--gold-light); }
+  .action-btn.receive { background: rgba(26,122,74,0.2); color: var(--green-light); border: 1px solid rgba(26,122,74,0.3); }
+  .action-btn.receive:hover { background: rgba(26,122,74,0.3); }
+  .action-btn.exchange { background: var(--dark4); color: var(--text); border: 1px solid var(--border); }
+  .action-btn.exchange:hover { background: rgba(245,166,35,0.1); color: var(--gold); }
+
+  /* STATS GRID */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card:hover { border-color: rgba(245,166,35,0.3); }
+
+  .stat-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; font-family: 'DM Mono', monospace; margin-bottom: 8px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+  .stat-change { font-size: 12px; margin-top: 4px; }
+  .stat-change.up { color: var(--green-light); }
+  .stat-change.down { color: var(--red); }
+
+  /* TWO COL */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+
+  .card {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .card-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+  .card-body { padding: 20px; }
+
+  /* TRANSACTIONS */
+  .tx-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+    cursor: pointer;
+  }
+
+  .tx-item:last-child { border-bottom: none; }
+
+  .tx-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .tx-icon.send { background: rgba(232,58,47,0.1); }
+  .tx-icon.receive { background: rgba(26,122,74,0.1); }
+  .tx-icon.exchange { background: rgba(245,166,35,0.1); }
+
+  .tx-info { flex: 1; }
+  .tx-name { font-size: 14px; font-weight: 500; }
+  .tx-meta { font-size: 12px; color: var(--text-dim); font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .tx-amount { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+  .tx-amount.positive { color: var(--green-light); }
+  .tx-amount.negative { color: var(--text); }
+
+  /* CURRENCIES */
+  .currency-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .currency-item:last-child { border-bottom: none; }
+
+  .currency-flag { font-size: 22px; width: 36px; text-align: center; }
+  .currency-info { flex: 1; }
+  .currency-name { font-size: 14px; font-weight: 500; }
+  .currency-code { font-size: 11px; color: var(--text-dim); font-family: 'DM Mono', monospace; }
+  .currency-rate { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--gold); }
+  .currency-change { font-size: 11px; }
+
+  /* SEND MONEY */
+  .form-group { margin-bottom: 20px; }
+  .form-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; font-family: 'DM Mono', monospace; margin-bottom: 8px; display: block; }
+
+  .form-input {
+    width: 100%;
+    background: var(--dark3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus { border-color: var(--gold); }
+  .form-input::placeholder { color: var(--text-dimmer); }
+
+  .form-select {
+    width: 100%;
+    background: var(--dark3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .amount-input-wrap {
+    position: relative;
+  }
+
+  .amount-currency {
+    position: absolute;
+    left: 16px; top: 50%; transform: translateY(-50%);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--gold);
+  }
+
+  .amount-input-wrap .form-input { padding-left: 60px; font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; }
+
+  .recipient-row {
+    display: flex; gap: 10px;
+  }
+
+  .recipient-tag {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--dark3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .recipient-tag:hover { border-color: var(--gold); color: var(--gold); }
+
+  .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .method-card {
+    padding: 14px;
+    background: var(--dark3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .method-card:hover, .method-card.active { border-color: var(--gold); background: rgba(245,166,35,0.05); }
+  .method-card .method-icon { font-size: 22px; margin-bottom: 6px; }
+  .method-card .method-name { font-size: 13px; font-weight: 500; }
+  .method-card .method-desc { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  /* FX CALCULATOR */
+  .fx-display {
+    background: var(--dark3);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .fx-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .fx-row:last-child { margin-bottom: 0; }
+
+  .fx-flag { font-size: 24px; }
+  .fx-info { flex: 1; }
+  .fx-currency { font-size: 12px; color: var(--text-dim); font-family: 'DM Mono', monospace; }
+  .fx-amount-large { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+
+  .fx-divider {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 0;
+  }
+  .fx-divider-line { flex: 1; height: 1px; background: var(--border); }
+  .fx-rate-badge {
+    font-size: 11px;
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    padding: 4px 10px;
+    background: rgba(245,166,35,0.1);
+    border-radius: 20px;
+    border: 1px solid rgba(245,166,35,0.2);
+  }
+
+  /* QR CODE */
+  .qr-container {
+    display: flex; flex-direction: column; align-items: center; padding: 20px;
+  }
+
+  .qr-code {
+    width: 180px; height: 180px;
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .qr-inner {
+    width: 100%; height: 100%;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    gap: 2px;
+  }
+
+  .qr-cell {
+    border-radius: 2px;
+    background: #000;
+  }
+
+  .qr-id {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  .qr-desc { font-size: 12px; color: var(--text-dim); text-align: center; }
+
+  /* USSD */
+  .ussd-phone {
+    background: var(--dark3);
+    border-radius: 20px;
+    padding: 20px 16px;
+    max-width: 240px;
+    margin: 0 auto;
+    border: 2px solid var(--border);
+  }
+
+  .ussd-screen {
+    background: #1a2a1a;
+    border-radius: 10px;
+    padding: 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: #7FFF7F;
+    min-height: 160px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(127,255,127,0.2);
+  }
+
+  .ussd-title { font-size: 11px; color: #4CAF50; margin-bottom: 8px; }
+  .ussd-menu-item { padding: 2px 0; }
+
+  .ussd-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+  .ussd-key {
+    background: var(--dark4);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--text);
+    transition: all 0.1s;
+  }
+
+  .ussd-key:hover { background: var(--gold); color: var(--dark); }
+  .ussd-key.special { font-size: 12px; font-weight: 400; font-family: 'DM Sans', sans-serif; }
+
+  /* MOBILE MONEY */
+  .mmoney-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+
+  .mmoney-provider {
+    padding: 16px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .mmoney-provider:hover, .mmoney-provider.active { border-color: var(--gold); }
+
+  .mpesa { background: rgba(0,135,84,0.1); }
+  .mtn { background: rgba(255,204,0,0.08); }
+  .orange { background: rgba(255,102,0,0.08); }
+  .airtel { background: rgba(231,0,18,0.1); }
+
+  .provider-logo {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+  }
+
+  .mpesa .provider-logo { background: #008754; color: white; font-size: 10px; }
+  .mtn .provider-logo { background: #FFCC00; color: #000; font-size: 10px; }
+  .orange .provider-logo { background: #FF6600; color: white; font-size: 10px; }
+  .airtel .provider-logo { background: #E70012; color: white; font-size: 10px; }
+
+  .provider-info { flex: 1; }
+  .provider-name { font-size: 14px; font-weight: 600; }
+  .provider-countries { font-size: 11px; color: var(--text-dim); font-family: 'DM Mono', monospace; }
+
+  /* CHART BARS */
+  .chart-area { padding: 16px 0; }
+  .chart-bars { display: flex; align-items: flex-end; gap: 8px; height: 80px; }
+
+  .chart-bar {
+    flex: 1;
+    border-radius: 4px 4px 0 0;
+    background: rgba(245,166,35,0.2);
+    transition: background 0.2s;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .chart-bar:hover { background: var(--gold); }
+  .chart-bar.active { background: var(--gold); }
+
+  .chart-labels { display: flex; gap: 8px; margin-top: 8px; }
+  .chart-label { flex: 1; text-align: center; font-size: 10px; color: var(--text-dimmer); font-family: 'DM Mono', monospace; }
+
+  /* NOTIFICATION DOT */
+  .notif-dot {
+    width: 8px; height: 8px;
+    background: var(--red);
+    border-radius: 50%;
+    position: absolute;
+    top: -2px; right: -2px;
+  }
+
+  /* PILL */
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .pill-green { background: rgba(26,122,74,0.15); color: var(--green-light); border: 1px solid rgba(26,122,74,0.2); }
+  .pill-gold { background: rgba(245,166,35,0.1); color: var(--gold); border: 1px solid rgba(245,166,35,0.2); }
+  .pill-red { background: rgba(232,58,47,0.1); color: #FF6B6B; border: 1px solid rgba(232,58,47,0.2); }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* MODAL OVERLAY */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    width: 420px;
+    max-width: 90vw;
+    animation: modalIn 0.2s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .modal-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 24px; }
+  .modal-close { float: right; cursor: pointer; color: var(--text-dim); font-size: 20px; background: none; border: none; color: var(--text-dim); }
+
+  /* SUCCESS STATE */
+  .success-icon {
+    width: 64px; height: 64px;
+    background: rgba(26,122,74,0.15);
+    border: 2px solid var(--green-light);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 16px;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* RESPONSIVE hints */
+  .full-width { grid-column: 1 / -1; }
+
+  /* AFRICA MAP DECORATION */
+  .africa-deco {
+    position: absolute;
+    right: 140px; top: 50%; transform: translateY(-50%);
+    font-size: 100px;
+    opacity: 0.04;
+    pointer-events: none;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo-area">
+      <div class="logo">ZAWADI<span>PAY</span></div>
+      <div class="logo-tag">Pan-African Payments Network</div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section-label">Main</div>
+      <div class="nav-item active" onclick="showPage('dashboard', this)">
+        <span class="nav-icon">⬡</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('send', this)">
+        <span class="nav-icon">↗</span> Send Money
+      </div>
+      <div class="nav-item" onclick="showPage('receive', this)">
+        <span class="nav-icon">↙</span> Receive
+      </div>
+      <div class="nav-item" onclick="showPage('exchange', this)">
+        <span class="nav-icon">⇄</span> FX Exchange
+      </div>
+
+      <div class="nav-section-label">Channels</div>
+      <div class="nav-item" onclick="showPage('mobilemoney', this)">
+        <span class="nav-icon">📱</span> Mobile Money
+      </div>
+      <div class="nav-item" onclick="showPage('qr', this)">
+        <span class="nav-icon">⊞</span> QR Payments
+      </div>
+      <div class="nav-item" onclick="showPage('ussd', this)">
+        <span class="nav-icon">🔢</span> USSD Banking
+      </div>
+
+      <div class="nav-section-label">Account</div>
+      <div class="nav-item" onclick="showPage('transactions', this)">
+        <span class="nav-icon">≡</span> Transactions
+        <span class="nav-badge">3</span>
+      </div>
+      <div class="nav-item" onclick="showPage('settings', this)">
+        <span class="nav-icon">◎</span> Settings
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar">AO</div>
+        <div class="user-info">
+          <div class="user-name">Amara Osei</div>
+          <div class="user-id">ZWD-KE-00421</div>
+        </div>
+        <span style="color:var(--text-dim); font-size:12px">›</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="network-badge">
+          <div class="dot"></div>
+          54 Networks Live
+        </div>
+        <button class="btn btn-primary" onclick="showPage('send', document.querySelector('.nav-item:nth-child(3)'))">+ Send</button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="balance-hero">
+        <div class="africa-deco">🌍</div>
+        <div class="balance-label">Total Balance</div>
+        <div class="balance-amount"><span>KES</span> 142,850.00</div>
+        <div class="balance-sub">≈ $1,102.18 USD · ≈ 1,014.22 EUR · Last updated just now</div>
+        <div class="balance-actions">
+          <button class="action-btn send" onclick="showPage('send', null)">↗ Send Money</button>
+          <button class="action-btn receive" onclick="showPage('receive', null)">↙ Receive</button>
+          <button class="action-btn exchange" onclick="showPage('exchange', null)">⇄ Exchange</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Sent This Month</div>
+          <div class="stat-value">KES 28,400</div>
+          <div class="stat-change up">↑ 12% vs last month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Received</div>
+          <div class="stat-value">KES 54,200</div>
+          <div class="stat-change up">↑ 8% vs last month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">FX Saved</div>
+          <div class="stat-value">KES 3,120</div>
+          <div class="stat-change up">↑ Best rate used 6×</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Countries Reached</div>
+          <div class="stat-value">7</div>
+          <div class="stat-change" style="color:var(--text-dim)">KE · UG · TZ · GH · NG · ZA · SN</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Recent Transactions</span>
+            <span class="pill pill-gold" onclick="showPage('transactions', null)" style="cursor:pointer">View All</span>
+          </div>
+          <div class="card-body">
+            <div class="tx-item">
+              <div class="tx-icon receive">↙</div>
+              <div class="tx-info">
+                <div class="tx-name">M-Pesa from Kwame A.</div>
+                <div class="tx-meta">KE → GH · 2h ago · REF#8821</div>
+              </div>
+              <div class="tx-amount positive">+KES 12,000</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-icon send">↗</div>
+              <div class="tx-info">
+                <div class="tx-name">MTN MoMo · Fatima D.</div>
+                <div class="tx-meta">KE → SN · Yesterday · REF#8820</div>
+              </div>
+              <div class="tx-amount negative">-KES 8,500</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-icon exchange">⇄</div>
+              <div class="tx-info">
+                <div class="tx-name">FX: KES → NGN</div>
+                <div class="tx-meta">Rate: 1 KES = 5.82 NGN · 2d ago</div>
+              </div>
+              <div class="tx-amount positive">+NGN 175,000</div>
+            </div>
+            <div class="tx-item">
+              <div class="tx-icon send">↗</div>
+              <div class="tx-info">
+                <div class="tx-name">QR Payment · Naivas Market</div>
+                <div class="tx-meta">KE Merchant · 3d ago · REF#8819</div>
+              </div>
+              <div class="tx-amount negative">-KES 3,200</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Spending Activity</span>
+            <span class="pill pill-gold">Jan 2025</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-area">
+              <div class="chart-bars">
+                <div class="chart-bar" style="height:40%"></div>
+                <div class="chart-bar" style="height:65%"></div>
+                <div class="chart-bar" style="height:35%"></div>
+                <div class="chart-bar active" style="height:80%"></div>
+                <div class="chart-bar" style="height:55%"></div>
+                <div class="chart-bar" style="height:70%"></div>
+                <div class="chart-bar" style="height:90%"></div>
+              </div>
+              <div class="chart-labels">
+                <div class="chart-label">Mon</div>
+                <div class="chart-label">Tue</div>
+                <div class="chart-label">Wed</div>
+                <div class="chart-label">Thu</div>
+                <div class="chart-label">Fri</div>
+                <div class="chart-label">Sat</div>
+                <div class="chart-label">Sun</div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div style="display:flex; justify-content:space-between; font-size:13px;">
+              <span style="color:var(--text-dim)">Avg daily spend</span>
+              <span style="font-family:'DM Mono',monospace; color:var(--gold)">KES 4,057</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CURRENCIES STRIP -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Live FX Rates · Base: KES</span>
+          <span class="pill pill-green">Live</span>
+        </div>
+        <div class="card-body" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:0;">
+          <div class="currency-item" style="flex-direction:column; align-items:flex-start; padding:12px 16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span class="currency-flag">🇳🇬</span><span class="currency-code">NGN</span></div>
+            <div class="currency-rate">5.82</div>
+            <div class="currency-change up" style="color:var(--green-light); font-size:11px;">↑ 0.3%</div>
+          </div>
+          <div class="currency-item" style="flex-direction:column; align-items:flex-start; padding:12px 16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span class="currency-flag">🇬🇭</span><span class="currency-code">GHS</span></div>
+            <div class="currency-rate">0.043</div>
+            <div class="currency-change" style="color:var(--text-dim); font-size:11px;">→ Stable</div>
+          </div>
+          <div class="currency-item" style="flex-direction:column; align-items:flex-start; padding:12px 16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span class="currency-flag">🇿🇦</span><span class="currency-code">ZAR</span></div>
+            <div class="currency-rate">0.139</div>
+            <div class="currency-change down" style="color:#FF6B6B; font-size:11px;">↓ 0.1%</div>
+          </div>
+          <div class="currency-item" style="flex-direction:column; align-items:flex-start; padding:12px 16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span class="currency-flag">🇺🇬</span><span class="currency-code">UGX</span></div>
+            <div class="currency-rate">28.74</div>
+            <div class="currency-change up" style="color:var(--green-light); font-size:11px;">↑ 0.5%</div>
+          </div>
+          <div class="currency-item" style="flex-direction:column; align-items:flex-start; padding:12px 16px; border-bottom:none;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span class="currency-flag">🇸🇳</span><span class="currency-code">XOF</span></div>
+            <div class="currency-rate">4.88</div>
+            <div class="currency-change up" style="color:var(--green-light); font-size:11px;">↑ 0.2%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEND MONEY -->
+    <div class="page" id="page-send">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Send Money</span><span class="pill pill-gold">Instant</span></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Recipient</label>
+              <input class="form-input" placeholder="+254 7XX XXX XXX or ZWD ID" />
+              <div class="recipient-row" style="margin-top:8px;">
+                <div class="recipient-tag">👤 Kwame A.</div>
+                <div class="recipient-tag">👤 Fatima D.</div>
+                <div class="recipient-tag">👤 Chidi N.</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Amount</label>
+              <div class="amount-input-wrap">
+                <span class="amount-currency">KES</span>
+                <input class="form-input" type="number" placeholder="0.00" oninput="calcFX(this.value)" />
+              </div>
+              <div style="margin-top:8px; font-size:12px; color:var(--text-dim); font-family:'DM Mono',monospace;" id="fx-preview">≈ Enter amount to see conversion</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Send To Country</label>
+              <select class="form-select" onchange="updateFXPreview()">
+                <option>🇰🇪 Kenya (KES)</option>
+                <option>🇳🇬 Nigeria (NGN)</option>
+                <option>🇬🇭 Ghana (GHS)</option>
+                <option>🇺🇬 Uganda (UGX)</option>
+                <option>🇹🇿 Tanzania (TZS)</option>
+                <option>🇸🇳 Senegal (XOF)</option>
+                <option>🇿🇦 South Africa (ZAR)</option>
+                <option>🇪🇹 Ethiopia (ETB)</option>
+                <option>🇷🇼 Rwanda (RWF)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Payment Method</label>
+              <div class="method-grid">
+                <div class="method-card active" onclick="selectMethod(this)">
+                  <div class="method-icon">📱</div>
+                  <div class="method-name">Mobile Money</div>
+                  <div class="method-desc">M-Pesa, MTN, Airtel</div>
+                </div>
+                <div class="method-card" onclick="selectMethod(this)">
+                  <div class="method-icon">⊞</div>
+                  <div class="method-name">QR Code</div>
+                  <div class="method-desc">Scan to pay</div>
+                </div>
+                <div class="method-card" onclick="selectMethod(this)">
+                  <div class="method-icon">🏦</div>
+                  <div class="method-name">Bank Transfer</div>
+                  <div class="method-desc">Direct to account</div>
+                </div>
+                <div class="method-card" onclick="selectMethod(this)">
+                  <div class="method-icon">🔢</div>
+                  <div class="method-name">USSD</div>
+                  <div class="method-desc">Any phone</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Note (Optional)</label>
+              <input class="form-input" placeholder="What's this for?" />
+            </div>
+
+            <button class="btn btn-primary" style="width:100%; justify-content:center; padding:14px;" onclick="openModal('modal-confirm')">
+              Review & Send →
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><span class="card-title">Transfer Fee Preview</span></div>
+            <div class="card-body">
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+                <span style="color:var(--text-dim); font-size:13px;">You send</span>
+                <span style="font-family:'DM Mono',monospace;" id="fee-send">KES —</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+                <span style="color:var(--text-dim); font-size:13px;">Network fee (0.8%)</span>
+                <span style="font-family:'DM Mono',monospace; color:var(--gold);" id="fee-amount">KES —</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+                <span style="color:var(--text-dim); font-size:13px;">FX rate</span>
+                <span style="font-family:'DM Mono',monospace; color:var(--gold);" id="fee-rate">Best rate applied</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0;">
+                <span style="font-weight:600; font-size:14px;">Recipient gets</span>
+                <span style="font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:var(--green-light);" id="fee-gets">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><span class="card-title">Delivery Time</span></div>
+            <div class="card-body">
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex;align-items:center;gap:8px;"><span>📱</span><span style="font-size:13px;">Mobile Money</span></div>
+                  <span class="pill pill-green">Instant</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex;align-items:center;gap:8px;"><span>⊞</span><span style="font-size:13px;">QR Payment</span></div>
+                  <span class="pill pill-green">Instant</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex;align-items:center;gap:8px;"><span>🏦</span><span style="font-size:13px;">Bank Transfer</span></div>
+                  <span class="pill pill-gold">1–2 hrs</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex;align-items:center;gap:8px;"><span>🔢</span><span style="font-size:13px;">USSD</span></div>
+                  <span class="pill pill-green">Instant</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECEIVE -->
+    <div class="page" id="page-receive">
+      <div class="three-col">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Your QR Code</span><span class="pill pill-green">Active</span></div>
+          <div class="card-body">
+            <div class="qr-container">
+              <div class="qr-code" id="qr-display"></div>
+              <div class="qr-id">ZWD-KE-00421</div>
+              <div class="qr-desc">Scan with any ZawadiPay app<br>or compatible African payment app</div>
+              <div style="margin-top:16px; display:flex; gap:10px;">
+                <button class="btn btn-ghost" style="flex:1; justify-content:center;">⬇ Download</button>
+                <button class="btn btn-ghost" style="flex:1; justify-content:center;">⎘ Share</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Request Money</span></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Request From</label>
+              <input class="form-input" placeholder="Phone or ZWD ID" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Amount</label>
+              <div class="amount-input-wrap">
+                <span class="amount-currency">KES</span>
+                <input class="form-input" type="number" placeholder="0.00" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Message</label>
+              <input class="form-input" placeholder="Reason for request" />
+            </div>
+            <button class="btn btn-primary" style="width:100%; justify-content:center; padding:14px;">
+              Send Request →
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Your Payment Links</span></div>
+          <div class="card-body">
+            <div style="background:var(--dark3); border-radius:10px; padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+              <div style="font-size:12px; color:var(--text-dim); font-family:'DM Mono',monospace; margin-bottom:4px;">General Link</div>
+              <div style="font-size:13px; color:var(--gold); font-family:'DM Mono',monospace; word-break:break-all;">pay.zawadipay.africa/amara</div>
+              <div style="display:flex; gap:8px; margin-top:10px;">
+                <button class="btn btn-ghost" style="font-size:11px; padding:5px 10px;">⎘ Copy</button>
+                <button class="btn btn-ghost" style="font-size:11px; padding:5px 10px;">Share</button>
+              </div>
+            </div>
+            <button class="btn btn-ghost" style="width:100%; justify-content:center;">+ Create Fixed Amount Link</button>
+
+            <div class="divider"></div>
+
+            <div style="font-size:13px; color:var(--text-dim); margin-bottom:12px;">Accepted channels</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              <span class="pill pill-green">M-Pesa</span>
+              <span class="pill pill-green">MTN MoMo</span>
+              <span class="pill pill-green">Airtel</span>
+              <span class="pill pill-gold">Orange</span>
+              <span class="pill pill-gold">Wave</span>
+              <span class="pill pill-gold">Flutterwave</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FX EXCHANGE -->
+    <div class="page" id="page-exchange">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Currency Exchange</span><span class="pill pill-green">Best Rate Guaranteed</span></div>
+          <div class="card-body">
+            <div class="fx-display">
+              <div class="fx-row">
+                <span class="fx-flag">🇰🇪</span>
+                <div class="fx-info">
+                  <div class="fx-currency">KES · Kenyan Shilling</div>
+                  <div class="fx-amount-large" id="fx-from-amount">10,000</div>
+                </div>
+                <select class="form-select" style="width:auto; padding:8px 12px; font-size:13px;">
+                  <option>KES</option><option>USD</option><option>EUR</option>
+                </select>
+              </div>
+              <div class="fx-divider">
+                <div class="fx-divider-line"></div>
+                <div class="fx-rate-badge" id="fx-rate-badge">1 KES = 5.82 NGN</div>
+                <div class="fx-divider-line"></div>
+              </div>
+              <div class="fx-row">
+                <span class="fx-flag" id="fx-to-flag">🇳🇬</span>
+                <div class="fx-info">
+                  <div class="fx-currency" id="fx-to-name">NGN · Nigerian Naira</div>
+                  <div class="fx-amount-large" style="color:var(--green-light);" id="fx-to-amount">58,200</div>
+                </div>
+                <select class="form-select" style="width:auto; padding:8px 12px; font-size:13px;" onchange="updateFXCalc(this)">
+                  <option data-flag="🇳🇬" data-name="NGN · Nigerian Naira" data-rate="5.82">NGN</option>
+                  <option data-flag="🇬🇭" data-name="GHS · Ghanaian Cedi" data-rate="0.043">GHS</option>
+                  <option data-flag="🇺🇬" data-name="UGX · Ugandan Shilling" data-rate="28.74">UGX</option>
+                  <option data-flag="🇹🇿" data-name="TZS · Tanzanian Shilling" data-rate="19.86">TZS</option>
+                  <option data-flag="🇸🇳" data-name="XOF · West African Franc" data-rate="4.88">XOF</option>
+                  <option data-flag="🇿🇦" data-name="ZAR · South African Rand" data-rate="0.139">ZAR</option>
+                  <option data-flag="🇪🇹" data-name="ETB · Ethiopian Birr" data-rate="1.24">ETB</option>
+                  <option data-flag="🇺🇸" data-name="USD · US Dollar" data-rate="0.0077">USD</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">You Exchange</label>
+              <div class="amount-input-wrap">
+                <span class="amount-currency">KES</span>
+                <input class="form-input" type="number" value="10000" oninput="liveCalc(this.value)" />
+              </div>
+            </div>
+
+            <div style="background:var(--dark3); border-radius:10px; padding:16px; margin-bottom:20px; font-size:13px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="color:var(--text-dim);">Exchange fee (0.5%)</span>
+                <span style="font-family:'DM Mono',monospace; color:var(--gold);">KES 50</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color:var(--text-dim);">Rate valid for</span>
+                <span style="font-family:'DM Mono',monospace; color:var(--green-light);" id="rate-timer">4:59</span>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" style="width:100%; justify-content:center; padding:14px;">
+              Exchange Now →
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><span class="card-title">All African Currencies</span></div>
+            <div class="card-body" style="max-height:300px; overflow-y:auto;">
+              <div class="currency-item">
+                <span class="currency-flag">🇳🇬</span>
+                <div class="currency-info"><div class="currency-name">Nigerian Naira</div><div class="currency-code">NGN</div></div>
+                <div style="text-align:right;"><div class="currency-rate">5.82</div><div class="currency-change up" style="color:var(--green-light); font-size:11px;">↑ 0.3%</div></div>
+              </div>
+              <div class="currency-item">
+                <span class="currency-flag">🇬🇭</span>
+                <div class="currency-info"><div class="currency-name">Ghanaian Cedi</div><div class="currency-code">GHS</div></div>
+                <div style="text-align:right;"><div class="currency-rate">0.043</div><div style="color:var(--text-dim); font-size:11px;">→ Stable</div></div>
+              </div>
+              <div class="currency-item">
+                <span class="currency-flag">🇺🇬</span>
+                <div class="currency-info"><div class="currency-name">Ugandan Shilling</div><div class="currency-code">UGX</div></div>
+                <div style="text-align:right;"><div class="currency-rate">28.74</div><div class="currency-change up" style="color:var(--green-light); font-size:11px;">↑ 0.5%</div></div>
+              </div>
+              <div class="currency-item">
+                <span class="currency-flag">🇹🇿</span>
+                <div class="currency-info"><div class="currency-name">Tanzanian Shilling</div><div class="currency-code">TZS</div></div>
+                <div style="text-align:right;"><div class="currency-rate">19.86</div><div style="color:var(--text-dim); font-size:11px;">→ Stable</div></div>
+              </div>
+              <div class="currency-item">
+                <span class="currency-flag">🇸🇳</span>
+                <div class="currency-info"><div class="currency-name">West African Franc</div><div class="currency-code">XOF</div></div>
+                <div style="text-align:right;"><div class="currency-rate">4.88</div><div class="currency-change up" style="color:var(--green-light); font-size:11px;">↑ 0.2%</div></div>
+              </div>
+              <div class="currency-item">
+                <span class="currency-flag">🇿🇦</span>
+                <div class="currency-info"><div class="currency-name">South African Rand</div><div class="currency-code">ZAR</div></div>
+                <div style="text-align:right;"><div class="currency-rate">0.139</div><div class="currency-change down" style="color:#FF6B6B; font-size:11px;">↓ 0.1%</div></div>
+              </div>
+              <div class="currency-item">
+                <span class="currency-flag">🇪🇹</span>
+                <div class="currency-info"><div class="currency-name">Ethiopian Birr</div><div class="currency-code">ETB</div></div>
+                <div style="text-align:right;"><div class="currency-rate">1.24</div><div style="color:var(--text-dim); font-size:11px;">→ Stable</div></div>
+              </div>
+              <div class="currency-item" style="border-bottom:none;">
+                <span class="currency-flag">🇷🇼</span>
+                <div class="currency-info"><div class="currency-name">Rwandan Franc</div><div class="currency-code">RWF</div></div>
+                <div style="text-align:right;"><div class="currency-rate">10.28</div><div class="currency-change up" style="color:var(--green-light); font-size:11px;">↑ 0.1%</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE MONEY -->
+    <div class="page" id="page-mobilemoney">
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-header"><span class="card-title">Mobile Money Networks</span><span class="pill pill-green">6 Networks Active</span></div>
+        <div class="card-body">
+          <div class="mmoney-grid">
+            <div class="mmoney-provider mpesa active" onclick="toggleProvider(this)">
+              <div class="provider-logo">M-PESA</div>
+              <div class="provider-info">
+                <div class="provider-name">M-Pesa</div>
+                <div class="provider-countries">KE · TZ · GH · MZ · EG</div>
+              </div>
+              <span class="pill pill-green">Active</span>
+            </div>
+            <div class="mmoney-provider mtn" onclick="toggleProvider(this)">
+              <div class="provider-logo">MTN</div>
+              <div class="provider-info">
+                <div class="provider-name">MTN MoMo</div>
+                <div class="provider-countries">NG · GH · UG · CM · CI</div>
+              </div>
+              <span class="pill pill-gold">Link</span>
+            </div>
+            <div class="mmoney-provider orange" onclick="toggleProvider(this)">
+              <div class="provider-logo">OM</div>
+              <div class="provider-info">
+                <div class="provider-name">Orange Money</div>
+                <div class="provider-countries">SN · CI · ML · BF · GN</div>
+              </div>
+              <span class="pill pill-gold">Link</span>
+            </div>
+            <div class="mmoney-provider airtel" onclick="toggleProvider(this)">
+              <div class="provider-logo">AIRTL</div>
+              <div class="provider-info">
+                <div class="provider-name">Airtel Money</div>
+                <div class="provider-countries">NG · KE · UG · TZ · ZM</div>
+              </div>
+              <span class="pill pill-gold">Link</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Send via Mobile Money</span></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Recipient Number</label>
+              <input class="form-input" placeholder="+254 7XX XXX XXX" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Network</label>
+              <select class="form-select">
+                <option>M-Pesa (Kenya)</option>
+                <option>MTN MoMo (Nigeria)</option>
+                <option>Airtel Money (Uganda)</option>
+                <option>Orange Money (Senegal)</option>
+                <option>Wave (Senegal)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Amount</label>
+              <div class="amount-input-wrap">
+                <span class="amount-currency">KES</span>
+                <input class="form-input" type="number" placeholder="0.00" />
+              </div>
+            </div>
+            <button class="btn btn-primary" style="width:100%; justify-content:center; padding:14px;" onclick="openModal('modal-confirm')">
+              Send via M-Pesa →
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Linked Accounts</span></div>
+          <div class="card-body">
+            <div class="tx-item">
+              <div class="tx-icon receive" style="background:rgba(0,135,84,0.1);">📱</div>
+              <div class="tx-info">
+                <div class="tx-name">M-Pesa · +254 712 XXX XXX</div>
+                <div class="tx-meta">Verified · Primary account</div>
+              </div>
+              <span class="pill pill-green">Active</span>
+            </div>
+            <div style="padding:20px 0; text-align:center; color:var(--text-dim); font-size:13px;">
+              <div style="font-size:32px; margin-bottom:8px;">+</div>
+              <div>Link another mobile money account</div>
+              <button class="btn btn-ghost" style="margin-top:12px;">Add Network</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR PAYMENTS -->
+    <div class="page" id="page-qr">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Scan to Pay</span></div>
+          <div class="card-body" style="text-align:center; padding:40px 20px;">
+            <div style="width:200px; height:200px; background:var(--dark3); border:2px dashed var(--border); border-radius:12px; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:48px;">⊞</div>
+            <div style="font-size:14px; color:var(--text-dim); margin-bottom:20px;">Point camera at any QR code<br>to pay instantly</div>
+            <button class="btn btn-primary" style="padding:12px 28px;" onclick="openModal('modal-qrscan')">Open Camera</button>
+            <div class="divider"></div>
+            <div style="font-size:12px; color:var(--text-dim);">Works with M-Pesa, MTN, Airtel, Orange,<br>Visa, Mastercard QR codes across Africa</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">My QR Code</span><span class="pill pill-green">Receive Payments</span></div>
+          <div class="card-body">
+            <div class="qr-container">
+              <div class="qr-code" id="qr-display-2"></div>
+              <div class="qr-id">ZWD-KE-00421 · Amara Osei</div>
+              <div class="qr-desc">Dynamic QR — updates every 60 seconds<br>for maximum security</div>
+              <div style="margin-top:16px; display:flex; gap:10px; width:100%;">
+                <button class="btn btn-ghost" style="flex:1; justify-content:center; font-size:12px;">Set Fixed Amount</button>
+                <button class="btn btn-primary" style="flex:1; justify-content:center; font-size:12px;">Share Code</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USSD -->
+    <div class="page" id="page-ussd">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><span class="card-title">USSD Banking</span><span class="pill pill-gold">Works on Any Phone</span></div>
+          <div class="card-body" style="text-align:center; padding:24px;">
+            <div style="font-size:14px; color:var(--text-dim); margin-bottom:24px;">Dial from any mobile phone — no internet needed</div>
+            <div style="background:var(--dark3); border-radius:12px; padding:20px; margin-bottom:20px; font-family:'DM Mono',monospace; font-size:24px; font-weight:700; color:var(--gold); letter-spacing:4px;">
+              *483#
+            </div>
+            <div style="font-size:12px; color:var(--text-dim); margin-bottom:24px;">Available on Safaricom · MTN · Airtel · Orange · Glo</div>
+
+            <div class="ussd-phone">
+              <div class="ussd-screen">
+                <div class="ussd-title">ZAWADIPAY *483#</div>
+                <div class="ussd-menu-item">1. Send Money</div>
+                <div class="ussd-menu-item">2. Receive Money</div>
+                <div class="ussd-menu-item">3. Check Balance</div>
+                <div class="ussd-menu-item">4. Buy Airtime</div>
+                <div class="ussd-menu-item">5. FX Exchange</div>
+                <div class="ussd-menu-item">6. Transaction History</div>
+                <div class="ussd-menu-item">0. Exit</div>
+              </div>
+              <div class="ussd-keypad" id="ussd-keypad">
+                <div class="ussd-key" onclick="ussdPress('1')">1</div>
+                <div class="ussd-key" onclick="ussdPress('2')">2</div>
+                <div class="ussd-key" onclick="ussdPress('3')">3</div>
+                <div class="ussd-key" onclick="ussdPress('4')">4</div>
+                <div class="ussd-key" onclick="ussdPress('5')">5</div>
+                <div class="ussd-key" onclick="ussdPress('6')">6</div>
+                <div class="ussd-key" onclick="ussdPress('7')">7</div>
+                <div class="ussd-key" onclick="ussdPress('8')">8</div>
+                <div class="ussd-key" onclick="ussdPress('9')">9</div>
+                <div class="ussd-key special" onclick="ussdPress('*')">*</div>
+                <div class="ussd-key" onclick="ussdPress('0')">0</div>
+                <div class="ussd-key special" onclick="ussdPress('#')">#</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><span class="card-title">USSD Coverage</span></div>
+            <div class="card-body">
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+                  <span>🇰🇪 Kenya — *483#</span><span class="pill pill-green">Live</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+                  <span>🇳🇬 Nigeria — *483#</span><span class="pill pill-green">Live</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+                  <span>🇬🇭 Ghana — *483#</span><span class="pill pill-green">Live</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+                  <span>🇺🇬 Uganda — *483#</span><span class="pill pill-green">Live</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+                  <span>🇸🇳 Senegal — *483#</span><span class="pill pill-gold">Soon</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+                  <span>🇹🇿 Tanzania — *483#</span><span class="pill pill-gold">Soon</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Why USSD?</span></div>
+            <div class="card-body" style="font-size:13px; color:var(--text-dim); line-height:1.7;">
+              Over 60% of Africa's population uses feature phones without internet access. USSD banking ensures ZawadiPay reaches <span style="color:var(--text);">every African</span>, not just smartphone users — true financial inclusion.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div class="page" id="page-transactions">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Transactions</span>
+          <div style="display:flex; gap:8px;">
+            <select class="form-select" style="padding:6px 12px; font-size:12px; width:auto;">
+              <option>All Types</option>
+              <option>Sent</option>
+              <option>Received</option>
+              <option>Exchange</option>
+            </select>
+            <button class="btn btn-ghost" style="font-size:12px; padding:6px 12px;">⬇ Export</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="tx-item">
+            <div class="tx-icon receive">↙</div>
+            <div class="tx-info">
+              <div class="tx-name">M-Pesa Receive · Kwame Asante</div>
+              <div class="tx-meta">KE → GH · 2h ago · REF#ZWD8821 · Mobile Money</div>
+            </div>
+            <div><div class="tx-amount positive">+KES 12,000</div><span class="pill pill-green" style="float:right; margin-top:4px;">Done</span></div>
+          </div>
+          <div class="tx-item">
+            <div class="tx-icon send">↗</div>
+            <div class="tx-info">
+              <div class="tx-name">MTN MoMo · Fatima Diallo</div>
+              <div class="tx-meta">KE → SN · Yesterday · REF#ZWD8820 · Mobile Money</div>
+            </div>
+            <div><div class="tx-amount negative">-KES 8,500</div><span class="pill pill-green" style="float:right; margin-top:4px;">Done</span></div>
+          </div>
+          <div class="tx-item">
+            <div class="tx-icon exchange">⇄</div>
+            <div class="tx-info">
+              <div class="tx-name">FX Exchange · KES to NGN</div>
+              <div class="tx-meta">Rate: 5.82 · 2d ago · REF#ZWD8819 · Exchange</div>
+            </div>
+            <div><div class="tx-amount positive">+NGN 175,000</div><span class="pill pill-green" style="float:right; margin-top:4px;">Done</span></div>
+          </div>
+          <div class="tx-item">
+            <div class="tx-icon send">↗</div>
+            <div class="tx-info">
+              <div class="tx-name">QR Payment · Naivas Market</div>
+              <div class="tx-meta">KE Merchant · 3d ago · REF#ZWD8818 · QR</div>
+            </div>
+            <div><div class="tx-amount negative">-KES 3,200</div><span class="pill pill-green" style="float:right; margin-top:4px;">Done</span></div>
+          </div>
+          <div class="tx-item">
+            <div class="tx-icon receive">↙</div>
+            <div class="tx-info">
+              <div class="tx-name">USSD Receive · Chidi Nwosu</div>
+              <div class="tx-meta">NG → KE · 4d ago · REF#ZWD8817 · USSD</div>
+            </div>
+            <div><div class="tx-amount positive">+KES 25,000</div><span class="pill pill-green" style="float:right; margin-top:4px;">Done</span></div>
+          </div>
+          <div class="tx-item">
+            <div class="tx-icon send">↗</div>
+            <div class="tx-info">
+              <div class="tx-name">Airtel Money · Amina Hassan</div>
+              <div class="tx-meta">KE → TZ · 5d ago · REF#ZWD8816 · Mobile Money</div>
+            </div>
+            <div><div class="tx-amount negative">-KES 15,000</div><span class="pill pill-green" style="float:right; margin-top:4px;">Done</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Profile</span></div>
+          <div class="card-body">
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+              <div class="avatar" style="width:64px; height:64px; font-size:22px;">AO</div>
+              <div>
+                <div style="font-family:'Syne',sans-serif; font-size:18px; font-weight:700;">Amara Osei</div>
+                <div style="font-size:12px; color:var(--text-dim); font-family:'DM Mono',monospace;">ZWD-KE-00421</div>
+                <span class="pill pill-green" style="margin-top:6px;">KYC Verified</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input class="form-input" value="Amara Osei" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input class="form-input" value="+254 712 345 678" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Home Country</label>
+              <select class="form-select">
+                <option selected>🇰🇪 Kenya</option>
+                <option>🇳🇬 Nigeria</option>
+                <option>🇬🇭 Ghana</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Default Currency</label>
+              <select class="form-select">
+                <option selected>KES — Kenyan Shilling</option>
+                <option>USD — US Dollar</option>
+                <option>NGN — Nigerian Naira</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" style="padding:12px 24px;">Save Changes</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><span class="card-title">Security</span></div>
+            <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><div style="font-size:14px; font-weight:500;">2-Factor Auth</div><div style="font-size:12px; color:var(--text-dim);">SMS + Authenticator</div></div>
+                <span class="pill pill-green">Enabled</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><div style="font-size:14px; font-weight:500;">Transaction PIN</div><div style="font-size:12px; color:var(--text-dim);">Required for all payments</div></div>
+                <span class="pill pill-green">Set</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><div style="font-size:14px; font-weight:500;">Biometric Login</div><div style="font-size:12px; color:var(--text-dim);">Fingerprint / Face ID</div></div>
+                <span class="pill pill-gold">Optional</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><div style="font-size:14px; font-weight:500;">Daily Limit</div><div style="font-size:12px; color:var(--text-dim);">Max per day</div></div>
+                <span style="font-family:'DM Mono',monospace; font-size:13px; color:var(--gold);">KES 200,000</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><span class="card-title">Notifications</span></div>
+            <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px;">SMS Alerts</span>
+                <span class="pill pill-green">On</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px;">Push Notifications</span>
+                <span class="pill pill-green">On</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px;">FX Rate Alerts</span>
+                <span class="pill pill-gold">Set threshold</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:14px;">Weekly Summary</span>
+                <span class="pill pill-green">On</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- CONFIRM SEND MODAL -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-confirm')">✕</button>
+    <div class="modal-title">Confirm Transfer</div>
+    <div class="modal-sub">Review your transaction before sending</div>
+
+    <div style="background:var(--dark3); border-radius:10px; padding:16px; margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; padding:6px 0; font-size:13px; border-bottom:1px solid var(--border);">
+        <span style="color:var(--text-dim);">To</span>
+        <span>Fatima Diallo · +221 77X XXX XXX</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:6px 0; font-size:13px; border-bottom:1px solid var(--border);">
+        <span style="color:var(--text-dim);">Via</span>
+        <span>Orange Money · Senegal</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:6px 0; font-size:13px; border-bottom:1px solid var(--border);">
+        <span style="color:var(--text-dim);">Amount</span>
+        <span style="font-family:'Syne',sans-serif; font-weight:700;">KES 5,000</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:6px 0; font-size:13px; border-bottom:1px solid var(--border);">
+        <span style="color:var(--text-dim);">Fee</span>
+        <span style="color:var(--gold);">KES 40</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:6px 0; font-size:13px;">
+        <span style="color:var(--text-dim);">They receive</span>
+        <span style="color:var(--green-light); font-family:'Syne',sans-serif; font-weight:700;">XOF 24,200</span>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-ghost" style="flex:1; justify-content:center;" onclick="closeModal('modal-confirm')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1; justify-content:center;" onclick="confirmSend()">Confirm & Send →</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="modal-success">
+  <div class="modal" style="text-align:center;">
+    <div class="success-icon">✓</div>
+    <div class="modal-title">Money Sent!</div>
+    <div class="modal-sub">Your transfer is complete and Fatima has been notified</div>
+    <div style="background:var(--dark3); border-radius:10px; padding:14px; margin:16px 0; font-family:'DM Mono',monospace; font-size:12px; color:var(--gold);">
+      REF#ZWD8822 · 2025-01-26 14:32 EAT
+    </div>
+    <button class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;" onclick="closeModal('modal-success')">Done</button>
+  </div>
+</div>
+
+<!-- QR SCAN MODAL -->
+<div class="modal-overlay" id="modal-qrscan">
+  <div class="modal" style="text-align:center;">
+    <button class="modal-close" onclick="closeModal('modal-qrscan')">✕</button>
+    <div class="modal-title">Scan QR Code</div>
+    <div class="modal-sub">Point at any African payment QR code</div>
+    <div style="width:200px; height:200px; background:var(--dark3); border:2px solid var(--gold); border-radius:12px; margin:0 auto 16px; display:flex; align-items:center; justify-content:center; font-size:48px; position:relative;">
+      ⊞
+      <div style="position:absolute; top:10px; left:10px; width:20px; height:20px; border-top:2px solid var(--gold); border-left:2px solid var(--gold);"></div>
+      <div style="position:absolute; top:10px; right:10px; width:20px; height:20px; border-top:2px solid var(--gold); border-right:2px solid var(--gold);"></div>
+      <div style="position:absolute; bottom:10px; left:10px; width:20px; height:20px; border-bottom:2px solid var(--gold); border-left:2px solid var(--gold);"></div>
+      <div style="position:absolute; bottom:10px; right:10px; width:20px; height:20px; border-bottom:2px solid var(--gold); border-right:2px solid var(--gold);"></div>
+    </div>
+    <div style="font-size:12px; color:var(--text-dim);">Camera permission required</div>
+    <button class="btn btn-ghost" style="margin-top:16px; width:100%; justify-content:center;" onclick="closeModal('modal-qrscan')">Cancel</button>
+  </div>
+</div>
+
+<script>
+  // PAGE NAVIGATION
+  function showPage(pageId, navEl) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + pageId).classList.add('active');
+    if (navEl) navEl.classList.add('active');
+
+    const titles = {
+      dashboard: 'Dashboard', send: 'Send Money', receive: 'Receive Money',
+      exchange: 'FX Exchange', mobilemoney: 'Mobile Money', qr: 'QR Payments',
+      ussd: 'USSD Banking', transactions: 'Transactions', settings: 'Settings'
+    };
+    document.getElementById('page-title').textContent = titles[pageId] || pageId;
+  }
+
+  // MODALS
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  function confirmSend() {
+    closeModal('modal-confirm');
+    setTimeout(() => openModal('modal-success'), 200);
+  }
+
+  // FX CALCULATOR
+  function calcFX(amount) {
+    if (!amount) {
+      document.getElementById('fx-preview').textContent = '≈ Enter amount to see conversion';
+      document.getElementById('fee-send').textContent = 'KES —';
+      document.getElementById('fee-amount').textContent = 'KES —';
+      document.getElementById('fee-gets').textContent = '—';
+      return;
+    }
+    const rate = 5.82;
+    const converted = (amount * rate).toFixed(0);
+    const fee = (amount * 0.008).toFixed(0);
+    document.getElementById('fx-preview').textContent = `≈ NGN ${Number(converted).toLocaleString()} at 1 KES = ${rate} NGN`;
+    document.getElementById('fee-send').textContent = `KES ${Number(amount).toLocaleString()}`;
+    document.getElementById('fee-amount').textContent = `KES ${fee}`;
+    document.getElementById('fee-gets').textContent = `NGN ${Number(converted).toLocaleString()}`;
+  }
+
+  function liveCalc(amount) {
+    if (!amount) return;
+    const sel = document.querySelector('#page-exchange select:last-of-type');
+    const opt = sel.options[sel.selectedIndex];
+    const rate = parseFloat(opt.dataset.rate);
+    const result = (amount * rate).toFixed(2);
+    document.getElementById('fx-from-amount').textContent = Number(amount).toLocaleString();
+    document.getElementById('fx-to-amount').textContent = Number(result).toLocaleString();
+  }
+
+  function updateFXCalc(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    document.getElementById('fx-to-flag').textContent = opt.dataset.flag;
+    document.getElementById('fx-to-name').textContent = opt.dataset.name;
+    document.getElementById('fx-rate-badge').textContent = `1 KES = ${opt.dataset.rate} ${opt.value}`;
+    const amt = document.querySelector('#page-exchange input[type=number]').value || 10000;
+    document.getElementById('fx-to-amount').textContent = Number((amt * opt.dataset.rate).toFixed(0)).toLocaleString();
+  }
+
+  // RATE TIMER
+  let timerSecs = 299;
+  setInterval(() => {
+    timerSecs--;
+    if (timerSecs < 0) timerSecs = 299;
+    const m = Math.floor(timerSecs / 60);
+    const s = timerSecs % 60;
+    const el = document.getElementById('rate-timer');
+    if (el) el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+  }, 1000);
+
+  // USSD SIMULATOR
+  const ussdMenus = {
+    '': `ZAWADIPAY *483#\n1. Send Money\n2. Receive Money\n3. Check Balance\n4. Buy Airtime\n5. FX Exchange\n6. Transaction History\n0. Exit`,
+    '1': `SEND MONEY\n1. To ZawadiPay User\n2. To Mobile Number\n3. To Bank Account\n0. Back`,
+    '2': `RECEIVE MONEY\nYour ZWD ID:\nZWD-KE-00421\n\nShare this ID to\nreceive payments.\n0. Back`,
+    '3': `YOUR BALANCE\nKES 142,850.00\n≈ USD 1,102.18\n\n1. Full Statement\n0. Back`,
+    '4': `BUY AIRTIME\n1. For My Number\n2. For Other Number\n0. Back`,
+    '5': `FX EXCHANGE\n1. KES to NGN\n2. KES to GHS\n3. KES to UGX\n4. KES to ZAR\n0. Back`,
+    '6': `LAST 3 TRANSACTIONS\n1. +KES12000 M-Pesa\n2. -KES8500 MTN\n3. -KES3200 QR Pay\n0. Back`,
+  };
+
+  let ussdPath = '';
+  function ussdPress(key) {
+    if (key === '#') { ussdPath = ''; }
+    else if (key === '*') { ussdPath = ussdPath.slice(0, -1); }
+    else { ussdPath = key; }
+
+    const screen = document.querySelector('.ussd-screen');
+    const menu = ussdMenus[ussdPath] || ussdMenus[''];
+    screen.innerHTML = '<div class="ussd-title">ZAWADIPAY *483#</div>' +
+      menu.split('\n').map(l => `<div class="ussd-menu-item">${l}</div>`).join('');
+  }
+
+  // METHOD SELECTION
+  function selectMethod(el) {
+    document.querySelectorAll('.method-card').forEach(m => m.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function toggleProvider(el) {
+    el.classList.toggle('active');
+  }
+
+  // GENERATE SIMPLE QR PATTERNS
+  function generateQR(canvasId) {
+    const container = document.getElementById(canvasId);
+    if (!container) return;
+    const grid = document.createElement('div');
+    grid.className = 'qr-inner';
+
+    // Corner markers pattern
+    const corners = new Set();
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+      corners.add(`${r},${c}`);
+      corners.add(`${r},${9-c}`);
+      corners.add(`${9-r},${c}`);
+    }
+
+    for (let i = 0; i < 100; i++) {
+      const cell = document.createElement('div');
+      const r = Math.floor(i / 10), c = i % 10;
+      if (corners.has(`${r},${c}`) || (Math.random() > 0.5)) {
+        cell.className = 'qr-cell';
+      } else {
+        cell.style.background = 'transparent';
+      }
+      grid.appendChild(cell);
+    }
+    container.appendChild(grid);
+  }
+
+  generateQR('qr-display');
+  generateQR('qr-display-2');
+
+  // CLOSE MODALS ON BACKDROP CLICK
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.classList.remove('open');
+    });
+  });
+</script>
+</body>
+</html>
