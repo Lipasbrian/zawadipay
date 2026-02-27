@@ -532,18 +532,7 @@
     position: relative;
   }
 
-  .qr-inner {
-    width: 100%; height: 100%;
-    display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    grid-template-rows: repeat(10, 1fr);
-    gap: 2px;
-  }
-
-  .qr-cell {
-    border-radius: 2px;
-    background: #000;
-  }
+  .qr-code img { display: block; border-radius: 4px; }
 
   .qr-id {
     font-family: 'DM Mono', monospace;
@@ -1821,36 +1810,36 @@
     el.classList.toggle('active');
   }
 
-  // GENERATE SIMPLE QR PATTERNS
-  function generateQR(canvasId) {
-    const container = document.getElementById(canvasId);
+  // REAL QR CODE GENERATION using qrcode.js
+  function generateQR(containerId) {
+    const container = document.getElementById(containerId);
     if (!container) return;
-    const grid = document.createElement('div');
-    grid.className = 'qr-inner';
+    container.innerHTML = '';
+    container.style.background = 'white';
+    container.style.padding = '12px';
+    container.style.borderRadius = '12px';
+    container.style.display = 'flex';
+    container.style.alignItems = 'center';
+    container.style.justifyContent = 'center';
 
-    // Corner markers pattern
-    const corners = new Set();
-    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
-      corners.add(`${r},${c}`);
-      corners.add(`${r},${9-c}`);
-      corners.add(`${9-r},${c}`);
-    }
-
-    for (let i = 0; i < 100; i++) {
-      const cell = document.createElement('div');
-      const r = Math.floor(i / 10), c = i % 10;
-      if (corners.has(`${r},${c}`) || (Math.random() > 0.5)) {
-        cell.className = 'qr-cell';
-      } else {
-        cell.style.background = 'transparent';
-      }
-      grid.appendChild(cell);
-    }
-    container.appendChild(grid);
+    new QRCode(container, {
+      text: 'zawadipay://pay?to=ZWD-KE-00421&name=Amara+Osei&network=zawadipay',
+      width: 156,
+      height: 156,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
   }
 
-  generateQR('qr-display');
-  generateQR('qr-display-2');
+  // Load QRCode.js then generate
+  const qrScript = document.createElement('script');
+  qrScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  qrScript.onload = () => {
+    generateQR('qr-display');
+    generateQR('qr-display-2');
+  };
+  document.head.appendChild(qrScript);
 
   // CLOSE MODALS ON BACKDROP CLICK
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
